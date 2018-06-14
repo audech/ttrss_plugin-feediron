@@ -580,9 +580,15 @@ class Feediron extends Plugin implements IHandler
 
 		foreach($xpaths as $key=>$xpath){
 			$index = 0;
-			if(is_array($xpath) && array_key_exists('index', $xpath)){
-				$index = $xpath['index'];
+			$outer = false;
+			if(is_array($xpath)){
 				$xpath = $xpath['xpath'];
+				if(array_key_exists('index', $xpath)) {
+					$index = $xpath['index'];
+				}
+				if(array_key_exists('outer', $xpath)) {
+					$outer = $xpath['outer'];
+				}				
 			}
 			$entries = $xpathdom->query('(//'.$xpath.')');   // find main DIV according to config
 
@@ -603,10 +609,12 @@ class Feediron extends Plugin implements IHandler
 
 				//render nested nodes to html
 				$inner_html = $this->getInnerHtml($basenode);
-				if (!$inner_html){
+				if (!$inner_html||$outer){
 					//if there's no nested nodes, render the node itself
+					//also return entire node if option "outer" is true
 					$inner_html = $basenode->ownerDocument->saveXML($basenode);
 				}
+				Feediron_Logger::get()->log_html(Feediron_Logger::LOG_VERBOSE, "Adding content", $inner_html);
 				array_push($htmlout, $inner_html);
 			}
 			$content = join((array_key_exists('join_element', $config)?$config['join_element']:''), $htmlout);
